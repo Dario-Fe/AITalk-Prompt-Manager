@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AITalk Prompt Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a0a;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 1000;
+            border-bottom: 1px solid #8b5cf6;
+        }
+
+        .logo {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #111111;
+            border-right: 1px solid #333;
+            padding: 90px 1rem 1rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            color: #a855f7;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .folder-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .folder-item:hover {
+            border-color: #8b5cf6;
+            background: #222;
+        }
+
+        .folder-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+            border-color: #a855f7;
+        }
+
+        .folder-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .folder-icon {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .folder-name {
+            flex: 1;
+        }
+
+        .folder-count {
+            color: #888;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+
+        .menu-dots {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .menu-dots:hover {
+            color: #a855f7;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 90px 2rem 2rem;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .content-title {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-box {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: white;
+            width: 300px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        /* Prompts Grid */
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .prompt-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .prompt-card:hover {
+            border-color: #8b5cf6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.15);
+        }
+
+        .prompt-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .prompt-title {
+            font-weight: 600;
+            color: #a855f7;
+            font-size: 1.1rem;
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-copy, .btn-menu {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid #8b5cf6;
+            padding: 0.5rem;
+            border-radius: 6px;
+            color: #a855f7;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-copy:hover, .btn-menu:hover {
+            background: rgba(139, 92, 246, 0.4);
+            transform: scale(1.05);
+        }
+
+        .prompt-preview {
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            max-height: 120px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .prompt-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, #1a1a1a);
+        }
+
+        /* Dropdown Menu */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #1a1a1a;
+            border: 1px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 0.5rem 0;
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .dropdown-item.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-close:hover {
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #a855f7;
+            font-weight: 600;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 0.75rem;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: #333;
+            border: 1px solid #555;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            z-index: 3000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #888;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        .add-folder-btn {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid #8b5cf6;
+            color: #a855f7;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .add-folder-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+                padding: 90px 1rem 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .prompts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-box {
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">🤖 AITalk Prompt Manager</div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="dropdown">
+                <button class="btn-secondary" onclick="toggleBackupMenu(event)" style="padding: 0.75rem 1rem;">
+                    💾 Backup
+                </button>
+                <div class="dropdown-menu" id="backup-menu" style="right: 0; min-width: 200px;">
+                    <div class="dropdown-item" onclick="exportData()">
+                        📤 Esporta Dati
+                    </div>
+                    <div class="dropdown-item" onclick="document.getElementById('import-file').click()">
+                        📥 Importa Dati
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="openPromptModal()">+ Nuovo Prompt</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3>📁 Cartelle</h3>
+            <div id="folders-list">
+                <!-- Folders will be dynamically generated -->
+            </div>
+            <button class="add-folder-btn" onclick="openFolderModal()">
+                <span>📁</span>
+                <span>Nuova Cartella</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <div class="content-title" id="current-folder-title">Tutti i Prompt</div>
+                <input type="text" class="search-box" placeholder="🔍 Cerca prompt..." id="search-input" oninput="filterPrompts()">
+            </div>
+            
+            <div class="prompts-grid" id="prompts-grid">
+                <!-- Prompts will be dynamically generated -->
+            </div>
+            
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon">📝</div>
+                <h3>Nessun prompt trovato</h3>
+                <p>Inizia creando il tuo primo prompt!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Modal -->
+    <div class="modal" id="prompt-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="prompt-modal-title">Nuovo Prompt</div>
+                <button class="btn-close" onclick="closePromptModal()">&times;</button>
+            </div>
+            
+            <form id="prompt-form">
+                <div class="form-group">
+                    <label class="form-label">Titolo</label>
+                    <input type="text" class="form-input" id="prompt-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Cartella</label>
+                    <select class="form-select" id="prompt-folder" required>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Contenuto del Prompt</label>
+                    <textarea class="form-textarea" id="prompt-content" placeholder="Scrivi qui il tuo prompt..." required></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closePromptModal()">Annulla</button>
+                    <button type="submit" class="btn-primary">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Folder Modal -->
+    <div class="modal" id="folder-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="folder-modal-title">Nuova Cartella</div>
+                <button class="btn-close" onclick="closeFolderModal()">&times;</button>
+            </div>
+            
+            <form id="folder-form">
+                <div class="form-group">
+                    <label class="form-label">Nome Cartella</label>
+                    <input type="text" class="form-input" id="folder-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Icona (emoji)</label>
+                    <input type="text" class="form-input" id="folder-icon" placeholder="📝" maxlength="2">
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeFolderModal()">Annulla</button>
+                    <button type="submit" class="btn-primary">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Conferma Eliminazione</div>
+                <button class="btn-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            
+            <p id="confirm-message">Sei sicuro di voler eliminare questo elemento?</p>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeConfirmModal()">Annulla</button>
+                <button type="button" class="btn-primary" id="confirm-action" style="background: #ef4444;">Elimina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Data structure
+        let data = {
+            folders: [],
+            prompts: []
+        };
+
+        let currentFolder = null;
+        let editingPrompt = null;
+        let editingFolder = null;
+        let confirmCallback = null;
+
+        // LocalStorage functions
+        function saveData() {
+            try {
+                localStorage.setItem('ai-prompt-manager-data', JSON.stringify(data));
+            } catch (error) {
+                console.warn('LocalStorage not available, data will not persist');
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('ai-prompt-manager-data');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    data = { folders: [], prompts: [], ...parsed };
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Error loading data from localStorage');
+            }
+            return false;
+        }
+
+        // Export/Import functions
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ai-prompts-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            closeAllMenus();
+            showToast('Backup esportato con successo!');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    
+                    // Validate data structure
+                    if (!imported.folders || !imported.prompts || !Array.isArray(imported.folders) || !Array.isArray(imported.prompts)) {
+                        throw new Error('Formato file non valido');
+                    }
+                    
+                    // Merge or replace data
+                    const shouldReplace = confirm('Vuoi sostituire tutti i dati esistenti con quelli importati?\n\nOK = Sostituisci tutto\nAnnulla = Aggiungi ai dati esistenti');
+                    
+                    if (shouldReplace) {
+                        data = imported;
+                    } else {
+                        // Merge data - add unique IDs to avoid conflicts
+                        const maxFolderId = Math.max(0, ...data.folders.map(f => parseInt(f.id) || 0));
+                        const maxPromptId = Math.max(0, ...data.prompts.map(p => parseInt(p.id) || 0));
+                        
+                        imported.folders.forEach((folder, index) => {
+                            folder.id = (maxFolderId + index + 1).toString();
+                        });
+                        
+                        imported.prompts.forEach((prompt, index) => {
+                            prompt.id = (maxPromptId + index + 1).toString();
+                            // Update folder references if necessary
+                            const oldFolderId = prompt.folderId;
+                            const newFolder = imported.folders.find(f => f.id === oldFolderId);
+                            if (newFolder) {
+                                const newFolderId = (maxFolderId + imported.folders.indexOf(newFolder) + 1).toString();
+                                prompt.folderId = newFolderId;
+                            }
+                        });
+                        
+                        data.folders = [...data.folders, ...imported.folders];
+                        data.prompts = [...data.prompts, ...imported.prompts];
+                    }
+                    
+                    saveData();
+                    currentFolder = null;
+                    document.getElementById('current-folder-title').textContent = 'Tutti i Prompt';
+                    renderFolders();
+                    renderPrompts();
+                    populateFolderOptions();
+                    showToast('Dati importati con successo!');
+                    
+                } catch (error) {
+                    showToast('Errore: File non valido o corrotto');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function toggleBackupMenu(event) {
+            event.stopPropagation();
+            closeAllMenus();
+            const menu = document.getElementById('backup-menu');
+            menu.classList.add('show');
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try to load data from localStorage first
+            const dataLoaded = loadData();
+            
+            renderFolders();
+            renderPrompts();
+            populateFolderOptions();
+            
+            if (!dataLoaded && data.folders.length === 0) {
+                showToast('Benvenuto! Inizia creando la tua prima cartella e i tuoi prompt.');
+            }
+        });
+
+        // Render folders
+        function renderFolders() {
+            const container = document.getElementById('folders-list');
+            container.innerHTML = '';
+            
+            data.folders.forEach(folder => {
+                const promptCount = data.prompts.filter(p => p.folderId === folder.id).length;
+                const div = document.createElement('div');
+                div.className = `folder-item ${currentFolder === folder.id ? 'active' : ''}`;
+                div.innerHTML = `
+                    <div class="folder-info" onclick="selectFolder('${folder.id}')">
+                        <span class="folder-icon">${folder.icon}</span>
+                        <span class="folder-name">${folder.name}</span>
+                        <span class="folder-count">(${promptCount})</span>
+                    </div>
+                    <div class="dropdown">
+                        <button class="menu-dots" onclick="toggleFolderMenu(event, '${folder.id}')">⋮</button>
+                        <div class="dropdown-menu" id="folder-menu-${folder.id}">
+                            <div class="dropdown-item" onclick="editFolder('${folder.id}')">
+                                ✏️ Rinomina
+                            </div>
+                            <div class="dropdown-item danger" onclick="confirmDeleteFolder('${folder.id}')">
+                                🗑️ Elimina
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render prompts
+        function renderPrompts() {
+            const container = document.getElementById('prompts-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            let prompts = data.prompts;
+            if (currentFolder) {
+                prompts = prompts.filter(p => p.folderId === currentFolder);
+            }
+            
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm) {
+                prompts = prompts.filter(p => 
+                    p.title.toLowerCase().includes(searchTerm) || 
+                    p.content.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (prompts.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            container.style.display = 'grid';
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+            
+            prompts.forEach(prompt => {
+                const div = document.createElement('div');
+                div.className = 'prompt-card';
+                div.innerHTML = `
+                    <div class="prompt-header">
+                        <div class="prompt-title">${prompt.title}</div>
+                        <div class="prompt-actions">
+                            <button class="btn-copy" onclick="copyPrompt('${prompt.id}')" title="Copia prompt">
+                                📋
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn-menu" onclick="togglePromptMenu(event, '${prompt.id}')">⋮</button>
+                                <div class="dropdown-menu" id="prompt-menu-${prompt.id}">
+                                    <div class="dropdown-item" onclick="editPrompt('${prompt.id}')">
+                                        ✏️ Modifica
+                                    </div>
+                                    <div class="dropdown-item danger" onclick="confirmDeletePrompt('${prompt.id}')">
+                                        🗑️ Elimina
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prompt-preview">${prompt.content}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Select folder
+        function selectFolder(folderId) {
+            currentFolder = folderId === currentFolder ? null : folderId;
+            
+            const folder = data.folders.find(f => f.id === folderId);
+            const title = document.getElementById('current-folder-title');
+            title.textContent = currentFolder ? `${folder.icon} ${folder.name}` : 'Tutti i Prompt';
+            
+            renderFolders();
+            renderPrompts();
+        }
+
+        // Copy prompt to clipboard
+        function copyPrompt(promptId) {
+            const prompt = data.prompts.find(p => p.id === promptId);
+            navigator.clipboard.writeText(prompt.content).then(() => {
+                showToast('Prompt copiato nella clipboard!');
+            });
+        }
+
+        // Filter prompts
+        function filterPrompts() {
+            renderPrompts();
+        }
+
+        // Toggle dropdown menus
+        function togglePromptMenu(event, promptId) {
+            event.stopPropagation();
+            closeAllMenus();
+            const menu = document.getElementById(`prompt-menu-${promptId}`);
+            menu.classList.add('show');
+        }
+
+        function toggleFolderMenu(event, folderId) {
+            event.stopPropagation();
+            closeAllMenus();
+            const menu = document.getElementById(`folder-menu-${folderId}`);
+            menu.classList.add('show');
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+
+        // Modal functions
+        function openPromptModal() {
+            document.getElementById('prompt-modal').classList.add('show');
+            document.getElementById('prompt-modal-title').textContent = 'Nuovo Prompt';
+            document.getElementById('prompt-form').reset();
+            populateFolderOptions();
+            editingPrompt = null;
+        }
+
+        function closePromptModal() {
+            document.getElementById('prompt-modal').classList.remove('show');
+        }
+
+        function openFolderModal() {
+            document.getElementById('folder-modal').classList.add('show');
+            document.getElementById('folder-modal-title').textContent = 'Nuova Cartella';
+            document.getElementById('folder-form').reset();
+            editingFolder = null;
+        }
+
+        function closeFolderModal() {
+            document.getElementById('folder-modal').classList.remove('show');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.remove('show');
+            confirmCallback = null;
+        }
+
+        // Populate folder options in select
+        function populateFolderOptions() {
+            const select = document.getElementById('prompt-folder');
+            select.innerHTML = '';
+            data.folders.forEach(folder => {
+                const option = document.createElement('option');
+                option.value = folder.id;
+                option.textContent = `${folder.icon} ${folder.name}`;
+                select.appendChild(option);
+            });
+            
+            if (currentFolder) {
+                select.value = currentFolder;
+            }
+        }
+
+        // Edit functions
+        function editPrompt(promptId) {
+            const prompt = data.prompts.find(p => p.id === promptId);
+            document.getElementById('prompt-title').value = prompt.title;
+            document.getElementById('prompt-content').value = prompt.content;
+            document.getElementById('prompt-folder').value = prompt.folderId;
+            document.getElementById('prompt-modal-title').textContent = 'Modifica Prompt';
+            document.getElementById('prompt-modal').classList.add('show');
+            editingPrompt = prompt;
+            closeAllMenus();
+        }
+
+        function editFolder(folderId) {
+            const folder = data.folders.find(f => f.id === folderId);
+            document.getElementById('folder-name').value = folder.name;
+            document.getElementById('folder-icon').value = folder.icon;
+            document.getElementById('folder-modal-title').textContent = 'Modifica Cartella';
+            document.getElementById('folder-modal').classList.add('show');
+            editingFolder = folder;
+            closeAllMenus();
+        }
+
+        // Confirm delete functions
+        function confirmDeletePrompt(promptId) {
+            const prompt = data.prompts.find(p => p.id === promptId);
+            document.getElementById('confirm-message').textContent = `Sei sicuro di voler eliminare il prompt "${prompt.title}"?`;
+            document.getElementById('confirm-modal').classList.add('show');
+            confirmCallback = () => deletePrompt(promptId);
+            closeAllMenus();
+        }
+
+        function confirmDeleteFolder(folderId) {
+            const folder = data.folders.find(f => f.id === folderId);
+            const promptCount = data.prompts.filter(p => p.folderId === folderId).length;
+            let message = `Sei sicuro di voler eliminare la cartella "${folder.name}"?`;
+            if (promptCount > 0) {
+                message += ` Contiene ${promptCount} prompt che verranno eliminati.`;
+            }
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-modal').classList.add('show');
+            confirmCallback = () => deleteFolder(folderId);
+            closeAllMenus();
+        }
+
+        // Delete functions
+        function deletePrompt(promptId) {
+            data.prompts = data.prompts.filter(p => p.id !== promptId);
+            saveData();
+            renderPrompts();
+            renderFolders();
+            closeConfirmModal();
+            showToast('Prompt eliminato!');
+        }
+
+        function deleteFolder(folderId) {
+            data.folders = data.folders.filter(f => f.id !== folderId);
+            data.prompts = data.prompts.filter(p => p.folderId !== folderId);
+            if (currentFolder === folderId) {
+                currentFolder = null;
+                document.getElementById('current-folder-title').textContent = 'Tutti i Prompt';
+            }
+            saveData();
+            renderFolders();
+            renderPrompts();
+            closeConfirmModal();
+            showToast('Cartella eliminata!');
+        }
+
+        // Form submissions
+        document.getElementById('prompt-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('prompt-title').value.trim();
+            const content = document.getElementById('prompt-content').value.trim();
+            const folderId = document.getElementById('prompt-folder').value;
+            
+            if (!title || !content || !folderId) return;
+            
+            if (editingPrompt) {
+                editingPrompt.title = title;
+                editingPrompt.content = content;
+                editingPrompt.folderId = folderId;
+                showToast('Prompt aggiornato!');
+            } else {
+                const newPrompt = {
+                    id: Date.now().toString(),
+                    title: title,
+                    content: content,
+                    folderId: folderId
+                };
+                data.prompts.push(newPrompt);
+                showToast('Prompt creato!');
+            }
+            
+            saveData();
+            renderPrompts();
+            renderFolders();
+            closePromptModal();
+        });
+
+        document.getElementById('folder-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('folder-name').value.trim();
+            const icon = document.getElementById('folder-icon').value.trim() || '📁';
+            
+            if (!name) return;
+            
+            // Check for duplicate names
+            const existingFolder = data.folders.find(f => f.name.toLowerCase() === name.toLowerCase() && f !== editingFolder);
+            if (existingFolder) {
+                showToast('Una cartella con questo nome esiste già!');
+                return;
+            }
+            
+            if (editingFolder) {
+                editingFolder.name = name;
+                editingFolder.icon = icon;
+                showToast('Cartella aggiornata!');
+            } else {
+                const newFolder = {
+                    id: Date.now().toString(),
+                    name: name,
+                    icon: icon
+                };
+                data.folders.push(newFolder);
+                showToast('Cartella creata!');
+            }
+            
+            saveData();
+            renderFolders();
+            populateFolderOptions();
+            closeFolderModal();
+        });
+
+        document.getElementById('confirm-action').addEventListener('click', function() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+        });
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                closeAllMenus();
+            }
+        });
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+N for new prompt
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                openPromptModal();
+            }
+            
+            // Escape to close modals
+            if (e.key === 'Escape') {
+                closeAllMenus();
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+            }
+        });
+
+        // Auto-save feature reminder
+        setInterval(() => {
+            // Data is automatically saved on every change via saveData() calls
+            // This interval serves as a reminder that persistence is active
+        }, 30000);
+
+        // Initial welcome message
+        setTimeout(() => {
+            if (data.prompts.length === 0 && data.folders.length === 0) {
+                showToast('💡 Suggerimento: Crea prima alcune cartelle per organizzare i tuoi prompt!');
+            }
+        }, 1500);
+    </script>
+</body>
+</html>
